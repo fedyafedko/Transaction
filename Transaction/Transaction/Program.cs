@@ -1,19 +1,33 @@
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using System.Data;
+using Transaction.BLL.Services;
+using Transaction.BLL.Services.Interfaces;
 using Transaction.Common.Configs;
 using Transaction.DAL.EF;
 using Transaction.Seeding.Extentions;
+using Transaction.Utility;
 
 var builder = WebApplication.CreateBuilder(args);
+var defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 //Configs
-builder.Services.Configure<ConnectionStringsConfig>(builder.Configuration.GetSection("ConnectionStrings"));
 builder.Services.Configure<ExcelConfig>(builder.Configuration.GetSection("Excel"));
 
+//Routing
+builder.Services.AddControllers(options => options.Conventions.Add(new RouteTokenTransformerConvention(new SlugifyParameterTransformer())));
 
-// DbContext
-builder.Services.AddDbContext<ApplicationDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Configure Entity Framework Core DbContext
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(defaultConnectionString));
+
+// Configure IDbConnection using Dapper
+builder.Services.AddScoped<IDbConnection>(serviceProvider =>
+    new SqlConnection(defaultConnectionString));
+
+//Services
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 // Seeding
 builder.Services.AddSeeding();
