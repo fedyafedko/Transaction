@@ -1,25 +1,25 @@
 ﻿using CsvHelper.Configuration;
 using CsvHelper;
-using Microsoft.Data.SqlClient;
 using System.Globalization;
 using Dapper;
 using Transaction.Seeding.Interfaces;
 using Transaction.Common.Configs;
 using Microsoft.Extensions.Options;
+using System.Data;
 
 namespace Transaction.Seeding.Behaviours;
 
 public class ExcelSeedingBehaviour : ISeedingBehaviour
 {
-    private readonly ConnectionStringsConfig _connectionString;
+    private readonly IDbConnection _dbConnection;
     private readonly ExcelConfig _excelConfig;
 
     public ExcelSeedingBehaviour(
-        IOptions<ConnectionStringsConfig> connectionString,
-        IOptions<ExcelConfig> excelConfig)
+        IOptions<ExcelConfig> excelConfig,
+        IDbConnection dbConnection)
     {
-        _connectionString = connectionString.Value;
         _excelConfig = excelConfig.Value;
+        _dbConnection = dbConnection;
     }
 
     public async Task SeedAsync()
@@ -34,29 +34,25 @@ public class ExcelSeedingBehaviour : ISeedingBehaviour
         {
             var records = csv.GetRecords<Entities.Transaction>();
 
-            using (var connection = new SqlConnection(_connectionString.DefaultConnection))
+            foreach (var record in records)
             {
-                await connection.OpenAsync();
-                foreach (var record in records)
-                {
-                    var existingTransaction = await connection.QueryFirstOrDefaultAsync<Entities.Transaction>(
-                        "SELECT * FROM Transactions WHERE TransactionId = @TransactionId", new { record.TransactionId });
+                var existingTransaction = await _dbConnection.QueryFirstOrDefaultAsync<Entities.Transaction>(
+                    "SELECT * FROM Transactions WHERE TransactionId = @TransactionId", new { record.TransactionId });
 
-                    if (existingTransaction != null)
-                    {
-                        var updateQuery = @"
+                if (existingTransaction != null)
+                {
+                    var updateQuery = @"
                             UPDATE Transactions
                             SET Name = @Name, Email = @Email, Amount = @Amount, TransactionDate = @TransactionDate, ClientLocation = @ClientLocation
                             WHERE TransactionId = @TransactionId";
-                        await connection.ExecuteAsync(updateQuery, record);
-                    }
-                    else
-                    {
-                        var insertQuery = @"
+                    await _dbConnection.ExecuteAsync(updateQuery, record);
+                }
+                else
+                {
+                    var insertQuery = @"
                             INSERT INTO Transactions (TransactionId, Name, Email, Amount, TransactionDate, ClientLocation)
                             VALUES (@TransactionId, @Name, @Email, @Amount, @TransactionDate, @ClientLocation)";
-                        await connection.ExecuteAsync(insertQuery, record);
-                    }
+                    await _dbConnection.ExecuteAsync(insertQuery, record);
                 }
             }
         }
