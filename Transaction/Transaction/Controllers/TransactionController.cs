@@ -64,8 +64,13 @@ public class TransactionController : ControllerBase
     {
         try
         {
+            TimeZoneInfo timeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZone);
             var result = await _transactionService.Get2023TransactionsInUserTZ(userTimeZone);
             return Ok(result);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return BadRequest($"The time zone '{userTimeZone}' was not found.");
         }
         catch (Exception ex)
         {
@@ -118,6 +123,10 @@ public class TransactionController : ControllerBase
         {
             var result = await _transactionService.Get2024TransactionsInUserTZ(userTimeZone);
             return Ok(result);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return BadRequest($"The time zone '{userTimeZone}' was not found.");
         }
         catch (Exception ex)
         {
