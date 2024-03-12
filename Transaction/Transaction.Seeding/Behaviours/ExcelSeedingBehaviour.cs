@@ -27,6 +27,8 @@ public class ExcelSeedingBehaviour : ISeedingBehaviour
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
+            HeaderValidated = null,
+            MissingFieldFound = null,
         };
 
         using (var reader = new StreamReader(_excelConfig.FilePath))
@@ -43,15 +45,15 @@ public class ExcelSeedingBehaviour : ISeedingBehaviour
                 {
                     var updateQuery = @"
                             UPDATE Transactions
-                            SET Name = @Name, Email = @Email, Amount = @Amount, TransactionDate = @TransactionDate, ClientLocation = @ClientLocation
+                            SET Name = @Name, Email = @Email, Amount = @Amount, TransactionDate = @TransactionDate, ClientLocation = @ClientLocation, Status = 'Updated'
                             WHERE TransactionId = @TransactionId";
                     await _dbConnection.ExecuteAsync(updateQuery, record);
                 }
                 else
                 {
                     var insertQuery = @"
-                            INSERT INTO Transactions (TransactionId, Name, Email, Amount, TransactionDate, ClientLocation)
-                            VALUES (@TransactionId, @Name, @Email, @Amount, @TransactionDate, @ClientLocation)";
+                            INSERT INTO Transactions (TransactionId, Name, Email, Amount, TransactionDate, ClientLocation, Status)
+                            VALUES (@TransactionId, @Name, @Email, @Amount, @TransactionDate, @ClientLocation, 'New')";
                     await _dbConnection.ExecuteAsync(insertQuery, record);
                 }
             }

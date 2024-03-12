@@ -18,4 +18,5 @@ public class Transaction
     public DateTime TransactionDate { get; set; }
     [Name("client_location")]
     public string ClientLocation { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
 }
