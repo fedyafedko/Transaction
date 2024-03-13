@@ -2,6 +2,7 @@
 using Transaction.BLL.Services.Interfaces;
 using Transaction.Common.Configs;
 using Microsoft.Extensions.Options;
+using Transaction.Common.Requests;
 
 namespace Transaction.Controllers;
 
@@ -18,6 +19,32 @@ public class TransactionController : ControllerBase
     {
         _transactionService = transactionService;
         _excelConfig = excelConfig.Value;
+    }
+
+    /// <summary>
+    /// Retrieves time zone by location.
+    /// </summary>
+    /// Sample request:
+    ///
+    ///     GET /api/transaction/get-time-zone-by-location?Latitude=23.5646&Longitude=321.342
+    ///
+    /// </remarks>
+    /// <param name="request">Latitude and longitude coordinates.</param>
+    /// <returns>Time zone.</returns>
+    [HttpGet("[action]")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public IActionResult GetTimeZoneByLocation([FromQuery] LocationRequest request)
+    {
+        try
+        {
+            var result = _transactionService.GetTimeZoneByLocation(request);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     /// <summary>

@@ -1,9 +1,12 @@
 ﻿using Dapper;
+using GeoTimeZone;
 using OfficeOpenXml;
 using System.Data;
 using Transaction.BLL.Extensions;
 using Transaction.BLL.Services.Interfaces;
 using Transaction.Common.DTO;
+using Transaction.Common.Requests;
+using Transaction.Common.Responses;
 
 namespace Transaction.BLL.Services;
 
@@ -14,6 +17,14 @@ public class TransactionService : ITransactionService
     public TransactionService(IDbConnection connection)
     {
         _dbConnection = connection;
+    }
+
+    public TimeZoneResponse GetTimeZoneByLocation(LocationRequest request)
+    {
+        var timeZone = TimeZoneLookup.GetTimeZone(request.Latitude, request.Longitude).Result;
+        var response = new TimeZoneResponse{ TimeZone = timeZone };
+
+        return response;
     }
 
     public async Task<byte[]> GetTransactionsFile(List<string> columnsName)
@@ -150,4 +161,5 @@ public class TransactionService : ITransactionService
             return package.GetAsByteArray();
         }
     }
+
 }
